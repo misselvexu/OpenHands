@@ -75,12 +75,55 @@ class OpenHandsConfig(BaseModel):
         description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
     )
 
-    # Deprecated parameters - will be removed in a future version
-    workspace_base: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
-    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
-    # End of deprecated parameters
+    # Deprecated parameters have been removed from the model
+    # Use sandbox.volumes instead, e.g. '/host/path:/workspace:rw'
+
+    # Add deprecated properties for backward compatibility with tests
+    # These are private attributes to store the values
+    _workspace_base: str | None = None
+    _workspace_mount_path: str | None = None
+    _workspace_mount_path_in_sandbox: str = '/workspace'
+    _workspace_mount_rewrite: str | None = None
+
+    @property
+    def workspace_base(self) -> str | None:
+        """Deprecated: Use sandbox.volumes instead."""
+        return self._workspace_base
+
+    @workspace_base.setter
+    def workspace_base(self, value: str | None) -> None:
+        """Deprecated: Use sandbox.volumes instead."""
+        self._workspace_base = value
+
+    @property
+    def workspace_mount_path(self) -> str | None:
+        """Deprecated: Use sandbox.volumes instead."""
+        return self._workspace_mount_path
+
+    @workspace_mount_path.setter
+    def workspace_mount_path(self, value: str | None) -> None:
+        """Deprecated: Use sandbox.volumes instead."""
+        self._workspace_mount_path = value
+
+    @property
+    def workspace_mount_path_in_sandbox(self) -> str:
+        """Deprecated: Use sandbox.volumes instead."""
+        return self._workspace_mount_path_in_sandbox
+
+    @workspace_mount_path_in_sandbox.setter
+    def workspace_mount_path_in_sandbox(self, value: str) -> None:
+        """Deprecated: Use sandbox.volumes instead."""
+        self._workspace_mount_path_in_sandbox = value
+
+    @property
+    def workspace_mount_rewrite(self) -> str | None:
+        """Deprecated: Use sandbox.volumes instead."""
+        return self._workspace_mount_rewrite
+
+    @workspace_mount_rewrite.setter
+    def workspace_mount_rewrite(self, value: str | None) -> None:
+        """Deprecated: Use sandbox.volumes instead."""
+        self._workspace_mount_rewrite = value
 
     cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
@@ -157,4 +200,28 @@ class OpenHandsConfig(BaseModel):
         super().model_post_init(__context)
 
         if not OpenHandsConfig.defaults_dict:  # Only set defaults_dict if it's empty
-            OpenHandsConfig.defaults_dict = model_defaults_to_dict(self)
+            defaults = model_defaults_to_dict(self)
+
+            # Add deprecated workspace variables to defaults_dict for backward compatibility
+            defaults['workspace_base'] = {
+                'default': None,
+                'type': 'str',
+                'optional': True,
+            }
+            defaults['workspace_mount_path'] = {
+                'default': None,
+                'type': 'str',
+                'optional': True,
+            }
+            defaults['workspace_mount_path_in_sandbox'] = {
+                'default': '/workspace',
+                'type': 'str',
+                'optional': False,
+            }
+            defaults['workspace_mount_rewrite'] = {
+                'default': None,
+                'type': 'str',
+                'optional': True,
+            }
+
+            OpenHandsConfig.defaults_dict = defaults

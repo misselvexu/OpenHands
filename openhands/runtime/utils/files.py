@@ -12,16 +12,14 @@ from openhands.events.observation import (
 def resolve_path(
     file_path: str,
     working_directory: str,
-    workspace_base: str,
-    workspace_mount_path_in_sandbox: str,
+    sandbox_volumes: str | None,
 ) -> Path:
     """Resolve a file path to a path on the host filesystem.
 
     Args:
         file_path: The path to resolve.
         working_directory: The working directory of the agent.
-        workspace_mount_path_in_sandbox: The path to the workspace inside the sandbox.
-        workspace_base: The base path of the workspace on the host filesystem.
+        sandbox_volumes: The sandbox volumes configuration.
 
     Returns:
         The resolved path on the host filesystem.
@@ -36,7 +34,26 @@ def resolve_path(
     # (deny any .. path traversal to parent directories of the sandbox)
     abs_path_in_sandbox = path_in_sandbox.resolve()
 
-    # If the path is outside the workspace, deny it
+    # Default workspace path is /workspace
+    workspace_mount_path_in_sandbox = '/workspace'
+    workspace_base = '/tmp/workspace'  # Default fallback
+
+    # Parse sandbox volumes to find the workspace mount
+    if sandbox_volumes:
+        mounts = sandbox_volumes.split(',')
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2:
+                container_path = parts[1]
+                host_path = parts[0]
+
+                # Check if this path is a parent of our target path
+                if abs_path_in_sandbox.is_relative_to(container_path):
+                    workspace_mount_path_in_sandbox = container_path
+                    workspace_base = host_path
+                    break
+
+    # If the path is outside any mounted volume, deny it
     if not abs_path_in_sandbox.is_relative_to(workspace_mount_path_in_sandbox):
         raise PermissionError(f'File access not permitted: {file_path}')
 
@@ -71,15 +88,12 @@ def read_lines(all_lines: list[str], start: int = 0, end: int = -1) -> list[str]
 async def read_file(
     path: str,
     workdir: str,
-    workspace_base: str,
-    workspace_mount_path_in_sandbox: str,
+    sandbox_volumes: str | None,
     start: int = 0,
     end: int = -1,
 ) -> Observation:
     try:
-        whole_path = resolve_path(
-            path, workdir, workspace_base, workspace_mount_path_in_sandbox
-        )
+        whole_path = resolve_path(path, workdir, sandbox_volumes)
     except PermissionError:
         return ErrorObservation(
             f"You're not allowed to access this path: {path}. You can only access paths inside the workspace."
@@ -111,8 +125,7 @@ def insert_lines(
 async def write_file(
     path: str,
     workdir: str,
-    workspace_base: str,
-    workspace_mount_path_in_sandbox: str,
+    sandbox_volumes: str | None,
     content: str,
     start: int = 0,
     end: int = -1,
@@ -120,9 +133,7 @@ async def write_file(
     insert = content.split('\n')
 
     try:
-        whole_path = resolve_path(
-            path, workdir, workspace_base, workspace_mount_path_in_sandbox
-        )
+        whole_path = resolve_path(path, workdir, sandbox_volumes)
         if not os.path.exists(os.path.dirname(whole_path)):
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'

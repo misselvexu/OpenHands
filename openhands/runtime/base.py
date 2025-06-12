@@ -387,20 +387,14 @@ class Runtime(FileEditRuntimeMixin):
                 )
 
         if not selected_repository:
-            # In SaaS mode (indicated by user_id being set), always run git init
-            # In OSS mode, only run git init if workspace_base is not set
-            if self.user_id or not self.config.workspace_base:
-                logger.debug(
-                    'No repository selected. Initializing a new git repository in the workspace.'
-                )
-                action = CmdRunAction(
-                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
-                )
-                self.run_action(action)
-            else:
-                logger.info(
-                    'In workspace mount mode, not initializing a new git repository.'
-                )
+            # Always initialize a git repository in the workspace
+            logger.debug(
+                'No repository selected. Initializing a new git repository in the workspace.'
+            )
+            action = CmdRunAction(
+                command=f'git init && git config --global --add safe.directory {self.workspace_root}'
+            )
+            self.run_action(action)
             return ''
 
         # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
@@ -493,7 +487,8 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def workspace_root(self) -> Path:
         """Return the workspace root path."""
-        return Path(self.config.workspace_mount_path_in_sandbox)
+        # Default workspace path is /workspace
+        return Path('/workspace')
 
     def maybe_setup_git_hooks(self):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
