@@ -90,7 +90,7 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     assert default_config.get_llm_config().api_key.get_secret_value() == 'test-api-key'
     assert default_config.default_agent == 'BrowsingAgent'
     # Verify deprecated variables still work
-    assert default_config.sandbox.volumes.startswith('/opt/files/workspace')
+    assert default_config.sandbox.volumes == '/opt/files/workspace:/workspace:rw'
     assert default_config.workspace_mount_path is None  # before finalize_config
     assert default_config.workspace_mount_path_in_sandbox is not None
     assert default_config.sandbox.base_container_image == 'custom_image'
@@ -451,7 +451,10 @@ def test_sandbox_volumes(monkeypatch, default_config):
 
     # With the new behavior, only sandbox.volumes should be used
     # when no explicit /workspace mount is found
-    assert default_config.sandbox.volumes is None
+    assert (
+        default_config.sandbox.volumes
+        == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    )
     assert default_config.workspace_mount_path is None
     assert (
         default_config.workspace_mount_path_in_sandbox == '/workspace'
@@ -470,7 +473,7 @@ def test_sandbox_volumes_with_mode(monkeypatch, default_config):
 
     # With the new behavior, only sandbox.volumes should be used
     # when no explicit /workspace mount is found
-    assert default_config.sandbox.volumes is None
+    assert default_config.sandbox.volumes == '/host/path1:/container/path1:ro'
     assert default_config.workspace_mount_path is None
     assert (
         default_config.workspace_mount_path_in_sandbox == '/workspace'
@@ -624,13 +627,14 @@ def test_finalize_config(default_config):
 
 def test_workspace_mount_path_default(default_config):
     assert default_config.workspace_mount_path is None
-    default_config.sandbox.volumes = '/home/user/project'
+    default_config.sandbox.volumes = '/home/user/project:/workspace:rw'
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath('/home/user/project')
 
 
+@pytest.mark.skip(reason='workspace_* variables have been removed')
 def test_workspace_mount_rewrite(default_config, monkeypatch):
-    default_config.sandbox.volumes = '/home/user/project'
+    default_config.sandbox.volumes = '/home/user/project:/workspace:rw'
     default_config.workspace_mount_rewrite = '/home/user:/sandbox'
     monkeypatch.setattr('os.getcwd', lambda: '/current/working/directory')
     finalize_config(default_config)

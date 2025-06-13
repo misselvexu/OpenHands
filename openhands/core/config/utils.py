@@ -54,6 +54,8 @@ def load_from_env(
     # Handle deprecated workspace variables for backward compatibility with tests
     if 'WORKSPACE_BASE' in env_or_toml_dict:
         cfg.workspace_base = env_or_toml_dict['WORKSPACE_BASE']
+        # Also set sandbox.volumes for compatibility
+        cfg.sandbox.volumes = f'{env_or_toml_dict["WORKSPACE_BASE"]}:/workspace:rw'
     if 'WORKSPACE_MOUNT_PATH' in env_or_toml_dict:
         cfg.workspace_mount_path = env_or_toml_dict['WORKSPACE_MOUNT_PATH']
     if 'WORKSPACE_MOUNT_PATH_IN_SANDBOX' in env_or_toml_dict:
