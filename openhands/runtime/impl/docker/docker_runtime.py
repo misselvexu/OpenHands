@@ -245,7 +245,7 @@ class DockerRuntime(ActionExecutionClient):
                         'mode': mount_mode,
                     }
                     logger.debug(
-                        f'Mount dir: {host_path} to {container_path} with mode: {mount_mode}'
+                        f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
                     )
 
         return volumes
