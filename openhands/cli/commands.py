@@ -275,6 +275,10 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
     if not local_config_trusted_dirs:
         trusted_dirs = app_config_trusted_dirs
 
+    # For backward compatibility, use workspace_base if it exists
+    if hasattr(config, 'workspace_base') and config.workspace_base:
+        current_dir = config.workspace_base
+
     is_trusted = current_dir in trusted_dirs
 
     if not is_trusted:
