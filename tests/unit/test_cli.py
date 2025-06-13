@@ -352,6 +352,7 @@ async def test_main_without_task(
     # Mock config
     mock_config = MagicMock()
     mock_config.sandbox.volumes = '/test/dir'
+    mock_config.workspace_base = '/test/dir'  # Add this for backward compatibility
     mock_config.cli_multiline_input = False
     mock_setup_config.return_value = mock_config
 
@@ -434,6 +435,7 @@ async def test_main_with_task(
     # Mock config
     mock_config = MagicMock()
     mock_config.sandbox.volumes = '/test/dir'
+    mock_config.workspace_base = '/test/dir'  # Add this for backward compatibility
     mock_config.cli_multiline_input = False
     mock_setup_config.return_value = mock_config
 
@@ -530,6 +532,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
     # Mock config
     mock_config = MagicMock()
     mock_config.sandbox.volumes = '/test/dir'
+    mock_config.workspace_base = '/test/dir'  # Add this for backward compatibility
     mock_config.cli_multiline_input = False
     mock_setup_config.return_value = mock_config
 
@@ -703,6 +706,7 @@ async def test_main_security_check_fails(
     # Mock config
     mock_config = MagicMock()
     mock_config.sandbox.volumes = '/test/dir'
+    mock_config.workspace_base = '/test/dir'  # Add this for backward compatibility
     mock_setup_config.return_value = mock_config
 
     # Mock settings store
