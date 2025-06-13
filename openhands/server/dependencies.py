@@ -14,7 +14,8 @@ def check_session_api_key(
     Check the session API key and throw an exception if incorrect. Having this as a dependency
     means it appears in OpenAPI Docs
     """
-    if session_api_key != _SESSION_API_KEY:
+    # If _SESSION_API_KEY is None or empty, don't require authentication
+    if _SESSION_API_KEY and session_api_key != _SESSION_API_KEY:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
 

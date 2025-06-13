@@ -71,7 +71,8 @@ def test_client():
     """Create a test client for the settings API."""
     app = FastAPI()
     app.include_router(conversation_app)
-    return TestClient(app)
+    with patch('openhands.server.dependencies._SESSION_API_KEY', None):
+        return TestClient(app)
 
 
 def create_new_test_conversation(

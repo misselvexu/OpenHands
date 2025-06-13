@@ -32,6 +32,8 @@ def test_client():
             'openhands.server.routes.secrets.check_provider_tokens',
             AsyncMock(return_value=''),
         ),
+        # Mock the SESSION_API_KEY to None to bypass authentication
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
     ):
         client = TestClient(app)
         yield client

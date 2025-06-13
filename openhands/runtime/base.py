@@ -387,14 +387,16 @@ class Runtime(FileEditRuntimeMixin):
                 )
 
         if not selected_repository:
-            # Always initialize a git repository in the workspace
-            logger.debug(
-                'No repository selected. Initializing a new git repository in the workspace.'
-            )
-            action = CmdRunAction(
-                command=f'git init && git config --global --add safe.directory {self.workspace_root}'
-            )
-            self.run_action(action)
+            # Check if we should initialize a git repository in the workspace
+            # Skip initialization if sandbox.volumes is set (which replaces workspace_base)
+            if not self.config.sandbox.volumes:
+                logger.debug(
+                    'No repository selected. Initializing a new git repository in the workspace.'
+                )
+                action = CmdRunAction(
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
+                )
+                self.run_action(action)
             return ''
 
         # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated

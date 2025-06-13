@@ -20,11 +20,18 @@ from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 
 @pytest.fixture
-def test_client():
+def test_client(file_secrets_store):
     """Create a test client for the settings API."""
     app = FastAPI()
-    app.include_router(secrets_app)
-    return TestClient(app)
+    # Patch get_dependencies to return an empty list to bypass authentication
+    # and patch get_secrets_store to return our test file_secrets_store
+    with (
+        patch('openhands.server.dependencies.get_dependencies', return_value=[]),
+        patch('openhands.server.routes.secrets.get_secrets_store', return_value=file_secrets_store),
+        patch('openhands.server.routes.secrets.get_user_secrets', return_value=UserSecrets()),
+    ):
+        app.include_router(secrets_app)
+        return TestClient(app)
 
 
 @pytest.fixture

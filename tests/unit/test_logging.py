@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from io import StringIO
 from unittest.mock import patch
 
@@ -139,7 +140,10 @@ class TestJsonOutput:
         output = json.loads(string_io.getvalue())
         assert 'timestamp' in output
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'INFO'}
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        expected = {'message': 'Test message', level_key: 'INFO'}
+        assert output == expected
 
     def test_error(self, json_handler):
         logger, string_io = json_handler
@@ -147,7 +151,10 @@ class TestJsonOutput:
         logger.error('Test message')
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'ERROR'}
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        expected = {'message': 'Test message', level_key: 'ERROR'}
+        assert output == expected
 
     def test_extra_fields(self, json_handler):
         logger, string_io = json_handler
@@ -155,11 +162,14 @@ class TestJsonOutput:
         logger.info('Test message', extra={'key': '..val..'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        assert output == {
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        expected = {
             'key': '..val..',
             'message': 'Test message',
-            'level': 'INFO',
+            level_key: 'INFO',
         }
+        assert output == expected
 
     def test_extra_fields_from_adapter(self, json_handler):
         logger, string_io = json_handler
@@ -167,12 +177,15 @@ class TestJsonOutput:
         subject.info('Test message', extra={'log_fied': '..val..'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        assert output == {
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        expected = {
             'context_field': '..val..',
             'log_fied': '..val..',
             'message': 'Test message',
-            'level': 'INFO',
+            level_key: 'INFO',
         }
+        assert output == expected
 
     def test_extra_fields_from_adapter_can_override(self, json_handler):
         logger, string_io = json_handler
@@ -180,8 +193,11 @@ class TestJsonOutput:
         subject.info('Test message', extra={'override': 'b'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        assert output == {
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        expected = {
             'override': 'b',
             'message': 'Test message',
-            'level': 'INFO',
+            level_key: 'INFO',
         }
+        assert output == expected

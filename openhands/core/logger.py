@@ -486,7 +486,7 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
     def __init__(
         self, logger: logging.Logger = openhands_logger, extra: dict | None = None
     ) -> None:
-        self.logger = logger
+        super().__init__(logger, extra or {})
         self.extra = extra or {}
 
     def process(

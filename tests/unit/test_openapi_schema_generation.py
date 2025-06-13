@@ -63,6 +63,7 @@ def test_client():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
     ):
         client = TestClient(app)
         yield client

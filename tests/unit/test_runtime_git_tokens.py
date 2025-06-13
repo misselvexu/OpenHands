@@ -269,7 +269,8 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
 async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_dir):
     """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
     config = OpenHandsConfig()
-    config.workspace_base = '/some/path'  # Set workspace_base
+    # Since workspace_base is deprecated, we'll use sandbox.volumes instead
+    config.sandbox.volumes = '/some/path:/workspace:rw'
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
