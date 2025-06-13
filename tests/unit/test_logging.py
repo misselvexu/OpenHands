@@ -140,8 +140,8 @@ class TestJsonOutput:
         output = json.loads(string_io.getvalue())
         assert 'timestamp' in output
         del output['timestamp']
-        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
-        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'level'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
         expected = {'message': 'Test message', level_key: 'INFO'}
         assert output == expected
 
@@ -151,8 +151,8 @@ class TestJsonOutput:
         logger.error('Test message')
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
-        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'level'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
         expected = {'message': 'Test message', level_key: 'ERROR'}
         assert output == expected
 
@@ -162,8 +162,8 @@ class TestJsonOutput:
         logger.info('Test message', extra={'key': '..val..'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
-        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'level'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
         expected = {
             'key': '..val..',
             'message': 'Test message',
@@ -177,8 +177,8 @@ class TestJsonOutput:
         subject.info('Test message', extra={'log_fied': '..val..'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
-        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'level'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
         expected = {
             'context_field': '..val..',
             'log_fied': '..val..',
@@ -193,8 +193,8 @@ class TestJsonOutput:
         subject.info('Test message', extra={'override': 'b'})
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'severity'
-        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'severity')
+        # The key is determined by LOG_JSON_LEVEL_KEY env var, which defaults to 'level'
+        level_key = os.getenv('LOG_JSON_LEVEL_KEY', 'level')
         expected = {
             'override': 'b',
             'message': 'Test message',
