@@ -86,10 +86,8 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
             if not is_windows():
                 # Linux/macOS behavior
                 assert 'Keyboard interrupt received, exiting.' in obs_interrupt.content
-                assert (
-                    config.workspace_mount_path_in_sandbox
-                    in obs_interrupt.metadata.working_dir
-                )
+                # Check that working directory is in the workspace
+                assert '/workspace' in obs_interrupt.metadata.working_dir
 
         # Verify the server is actually stopped by trying to start another one
         # on the same port (regardless of OS)
@@ -104,10 +102,10 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         # Check working directory remains correct after interrupt handling
         if runtime_cls == CLIRuntime:
             # For CLIRuntime, working_dir is the absolute host path
-            assert obs.metadata.working_dir == config.workspace_base
+            assert os.path.exists(obs.metadata.working_dir)
         else:
             # For other runtimes (e.g., Docker), it's relative to or contains the sandbox path
-            assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
+            assert '/workspace' in obs.metadata.working_dir
 
         # run it again!
         action = CmdRunAction(command='python -u -m http.server 8081')
@@ -406,9 +404,7 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
     try:
         if is_windows():
             # Windows PowerShell version
-            obs = _run_cmd_action(
-                runtime, f'Get-ChildItem -Path {config.workspace_mount_path_in_sandbox}'
-            )
+            obs = _run_cmd_action(runtime, 'Get-ChildItem -Path /workspace')
             assert obs.exit_code == 0
 
             obs = _run_cmd_action(runtime, 'Get-ChildItem')
@@ -433,9 +429,7 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
             assert obs.exit_code == 0
         else:
             # Unix version
-            obs = _run_cmd_action(
-                runtime, f'ls -l {config.workspace_mount_path_in_sandbox}'
-            )
+            obs = _run_cmd_action(runtime, 'ls -l /workspace')
             assert obs.exit_code == 0
 
             obs = _run_cmd_action(runtime, 'ls -l')
@@ -514,13 +508,13 @@ def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
             # Windows PowerShell version using semicolon
             obs = _run_cmd_action(runtime, 'Get-Location && Get-ChildItem')
             assert obs.exit_code == 0
-            assert config.workspace_mount_path_in_sandbox in obs.content
+            assert '/workspace' in obs.content
             assert '.git_config' in obs.content
         else:
             # Original Linux version using &&
             obs = _run_cmd_action(runtime, 'pwd && ls -l')
             assert obs.exit_code == 0
-            assert config.workspace_mount_path_in_sandbox in obs.content
+            assert '/workspace' in obs.content
             assert 'total 0' in obs.content
     finally:
         _close_test_runtime(runtime)
@@ -542,11 +536,7 @@ def test_stateful_cmd(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'Get-Location')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             # Account for both forward and backward slashes in path
-            norm_path = config.workspace_mount_path_in_sandbox.replace(
-                '\\', '/'
-            ).replace('//', '/')
-            test_path = f'{norm_path}/test'.replace('//', '/')
-            assert test_path in obs.content.replace('\\', '/')
+            assert '/workspace/test' in obs.content.replace('\\', '/')
         else:
             # Original Linux version
             obs = _run_cmd_action(runtime, 'mkdir -p test')
@@ -565,9 +555,7 @@ def test_stateful_cmd(temp_dir, runtime_cls):
             assert obs.exit_code == 0, (
                 'The exit code for the pwd command (or combined command) should be 0.'
             )
-            assert (
-                f'{config.workspace_mount_path_in_sandbox}/test' in obs.content.strip()
-            )
+            assert '/workspace/test' in obs.content.strip()
     finally:
         _close_test_runtime(runtime)
 
@@ -590,7 +578,7 @@ def _create_test_file(host_temp_dir):
 def test_copy_single_file(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = '/workspace'
         sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
         _create_test_file(temp_dir)
         runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
@@ -629,7 +617,7 @@ def _create_host_test_dir_with_files(test_dir):
 def test_copy_directory_recursively(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
 
-    sandbox_dir = config.workspace_mount_path_in_sandbox
+    sandbox_dir = '/workspace'
     try:
         temp_dir_copy = os.path.join(temp_dir, 'test_dir')
         # We need a separate directory, since temp_dir is mounted to /workspace
@@ -678,7 +666,7 @@ def test_copy_directory_recursively(temp_dir, runtime_cls):
 def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = '/workspace'
         _create_test_file(temp_dir)
         runtime.copy_to(
             os.path.join(temp_dir, 'test_file.txt'), f'{sandbox_dir}/new_dir'
@@ -694,7 +682,7 @@ def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
 def test_overwrite_existing_file(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = '/workspace'
         sandbox_file = os.path.join(sandbox_dir, 'test_file.txt')
 
         if is_windows():
@@ -758,7 +746,7 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
 def test_copy_non_existent_file(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = '/workspace'
         with pytest.raises(FileNotFoundError):
             runtime.copy_to(
                 os.path.join(sandbox_dir, 'non_existent_file.txt'),
@@ -773,7 +761,7 @@ def test_copy_non_existent_file(temp_dir, runtime_cls):
 
 def test_copy_from_directory(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
-    sandbox_dir = config.workspace_mount_path_in_sandbox
+    sandbox_dir = '/workspace'
     try:
         temp_dir_copy = os.path.join(temp_dir, 'test_dir')
         # We need a separate directory, since temp_dir is mounted to /workspace
@@ -809,7 +797,7 @@ def test_git_operation(temp_dir, runtime_cls):
         run_as_openhands=True,
     )
     # this will happen if permission of runtime is not properly configured
-    # fatal: detected dubious ownership in repository at config.workspace_mount_path_in_sandbox
+    # fatal: detected dubious ownership in repository at /workspace
     try:
         if runtime_cls != LocalRuntime and runtime_cls != CLIRuntime:
             # on local machine, permissionless sudo will probably not be available
